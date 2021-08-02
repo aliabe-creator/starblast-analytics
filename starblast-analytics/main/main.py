@@ -231,7 +231,7 @@ def restart():
         
         time.sleep(45)
         
-        if (psutil.virtual_memory().percent > 80): #to stop server crashing due to use of memory
+        if (psutil.virtual_memory().percent > 90): #to stop server crashing due to use of memory
             sns.publish(TopicArn=topics[0]['TopicArn'], 
                             Message="Starblast Analytics server running now on memory. Program killed.", 
                             Subject="Starblast Analytics: Memory")
