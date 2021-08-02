@@ -11,6 +11,27 @@ import time
 from datetime import datetime
 import json
 from bokeh.io.output import reset_output
+import boto3
+from dotenv import load_dotenv
+import os
+
+error_sent = False #so only send error email once via SNS
+
+load_dotenv()
+
+keyid = os.environ.get("keyid")
+secret = os.environ.get("secret")
+
+# Create an SNS client
+sns = boto3.client(
+    "sns",
+    region_name="us-east-1", 
+    aws_access_key_id=keyid, 
+    aws_secret_access_key=secret
+)
+
+response = sns.list_topics()
+topics = response["Topics"] #get array of SNS Topics
 
 with open('data.json', 'r') as f: #only need to do at beginning
     data = json.load(f)
@@ -41,9 +62,23 @@ with open('data.json', 'r') as f: #only need to do at beginning
     f.close()
 
 def yes():
+    global error_sent
+    
+    try:
+        simstatus = requests.get('https://starblast.io/simstatus.json') #get simstatus
+        json_status = simstatus.json()
+    except Exception as e:  
+        if error_sent == False:
+            sns.publish(TopicArn=topics[0]['TopicArn'], 
+                        Message=e, 
+                        Subject="Error fetching simstatus.")
+            error_sent = True
+            
+        time.sleep(30)
+        yes()
+    
     # create a new plot with a title and axis labels
     p = figure(title="Players over Time", toolbar_location="above", plot_width=1000, plot_height=600, x_axis_label='Time', x_axis_type = 'datetime', y_axis_label='Number of players')
-    p.add_layout(Title(text="Click on legend labels to hide/show plots. Data is constantly updated.", align="left"), "below")
     
     # add a line renderer with legend and line thickness to the plot
     p.line(total_time, total_count, legend_label="Total Players", line_width=2, color = 'blue')
@@ -74,7 +109,7 @@ def yes():
     
     #second graph
     q = figure(title="Players over Time by Mode", toolbar_location="above", plot_width=1000, plot_height=600, x_axis_label='Time', x_axis_type = 'datetime', y_axis_label='Number of players')
-    q.add_layout(Title(text="Click on legend labels to hide/show plots. Data is constantly updated.", align="left"), "below")
+    q.add_layout(Title(text="Click on legend labels to hide/show plots. Data is constantly updated.", align="left"), "right")
     
     q.line(mode_time, team_count, legend_label="Team", line_width=2, color = 'lime')
     q.line(mode_time, survival_count, legend_label="Survival", line_width=2, color = 'tomato')
@@ -98,9 +133,6 @@ def yes():
     q.title.text_color = "black"
     q.legend.location = "top_left"
     q.legend.click_policy="hide"
-    
-    simstatus = requests.get('https://starblast.io/simstatus.json') #get simstatus
-    json_status = simstatus.json()
     
     #set counter values
     tot = 0
@@ -179,10 +211,11 @@ def yes():
     
     # save the results
     reset_output()
-    save(column(p, q), output_file = 'index.html', title = 'Starblast.io Player Archive Project')
+    save(column(p, q), filename = 'index.html', title = 'Starblast.io Activity Archive Project')
     print('done')
     
-    time.sleep(30)
+    time.sleep(45)
     yes() #recall. This avoids problems with assignment of p and q.
-
+    
 yes()
+    
