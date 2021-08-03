@@ -3,6 +3,8 @@ Created on Jul 29, 2021
 
 @author: Private
 '''
+#important change: python now actually has a recursion limit, so this program is just called by a .exp program externally.
+
 from bokeh.plotting import figure, save
 from bokeh.models import Title, HoverTool
 from bokeh.layouts import column
@@ -227,16 +229,12 @@ def yes():
     reset_output()
     save(column(p, q), filename = 'index.html', title = 'Starblast.io Activity Archive Project')
     print('done')
-    
-    time.sleep(45)
-    
+
     if (psutil.virtual_memory().percent > 90): #to stop server crashing due to use of memory
         sns.publish(TopicArn=topics[0]['TopicArn'], 
                         Message="Starblast Analytics server running now on memory. Program killed.", 
                         Subject="Starblast Analytics: Memory")
         sys.exit() #quits the program
-        
-    yes() #recall. This avoids problems with assignment of p and q.
 
 yes()
     
