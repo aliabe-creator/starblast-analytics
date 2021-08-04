@@ -13,29 +13,18 @@ import time
 from datetime import datetime
 import json
 from bokeh.io.output import reset_output
-import boto3
 from dotenv import load_dotenv
 import os
 import psutil
 import sys
 
-error_sent = False #so only send error email once via SNS
-
 load_dotenv()
 
-keyid = os.environ.get("keyid")
-secret = os.environ.get("secret")
+signalkey = os.environ.get("signalkey") #OneSignal api key
+appid = os.environ.get("appid") #OneSignal app id
 
-# Create an SNS client
-sns = boto3.client(
-    "sns",
-    region_name="us-east-1", 
-    aws_access_key_id=keyid, 
-    aws_secret_access_key=secret
-)
-
-response = sns.list_topics()
-topics = response["Topics"] #get array of SNS Topics
+header = {"Content-Type": "application/json; charset=utf-8",
+          "Authorization": signalkey}
 
 with open('data.json', 'r') as f: #only need to do at beginning
     data = json.load(f)
@@ -84,11 +73,16 @@ def yes():
         simstatus = requests.get('https://starblast.io/simstatus.json') #get simstatus
         json_status = simstatus.json()
     except Exception as e:  
-        if error_sent == False:
-            sns.publish(TopicArn=topics[0]['TopicArn'], 
-                        Message="Error!", 
-                        Subject="Starblast Analytics: Error fetching simstatus.")
-            error_sent = True
+        #Use OneSignal to push message to Android device
+        
+        payload = {"app_id": appid,
+           "included_segments": ["Subscribed Users"],
+           "headings": {"en": "Starblast Analytics Notifications"},
+           "contents": {"en": "Failed to fetch simstatus.json"},
+           "priority": 10, #set priority to high
+           "android_accent_color": "FFFF0000"}
+        
+        requests.post("https://onesignal.com/api/v1/notifications", headers=header, data=json.dumps(payload))
             
         time.sleep(60)
         yes()
@@ -231,9 +225,17 @@ def yes():
     print('done')
 
     if (psutil.virtual_memory().percent > 90): #to stop server crashing due to use of memory
-        sns.publish(TopicArn=topics[0]['TopicArn'], 
-                        Message="Starblast Analytics server running now on memory. Program killed.", 
-                        Subject="Starblast Analytics: Memory")
+        #Use OneSignal to push message to Android device
+        
+        payload = {"app_id": appid,
+           "included_segments": ["Subscribed Users"],
+           "headings": {"en": "Starblast Analytics Notifications"},
+           "contents": {"en": "Server running out of memory."},
+           "priority": 10, #set priority to high
+           "android_accent_color": "FFFF0000"}
+        
+        requests.post("https://onesignal.com/api/v1/notifications", headers=header, data=json.dumps(payload))
+        
         sys.exit() #quits the program
 
 yes()
