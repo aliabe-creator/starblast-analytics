@@ -1,5 +1,4 @@
-Hello! This is a long-running data collection program on the online multiplayer game Starblast.io. If you decide to run this yourself, you need to create your own data.json file, as well as a .env file containing your OneSignal credentials (for error reporting).
-
+Hello! This is a long-running data collection program on the online multiplayer game Starblast.io.
 On July 31, 2021, this program was pushed to a personal server, tracking overall player activity by region as well as by mode.
 On August 4, 2021, the method for notifying admin (me) when errors were occurring was changed from Amazon AWS SNS to OneSignal, built on top of Firebase. This is a slightly more complicated route, as it requires creating an Android app, but OneSignal has excellent documentation at https://documentation.onesignal.com/docs.
 On August 5th, 2021, the existing Bokeh graphs were embedded in a Dreamweaver-designed site, still hosted at the same url.

@@ -4,6 +4,7 @@ Created on Jul 29, 2021
 @author: Private
 '''
 #important change: python now actually has a recursion limit, so this program is just called by a .exp program externally.
+#if you want to run this program, you must change the paths to the files as necessary, and create your own site that embeds bokeh.html
 
 from bokeh.plotting import figure, save
 from bokeh.models import Title, HoverTool
