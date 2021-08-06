@@ -7,7 +7,7 @@ Created on Jul 29, 2021
 
 from bokeh.plotting import figure, save
 from bokeh.models import Title, HoverTool
-from bokeh.layouts import column
+from bokeh.layouts import column, row
 import requests
 import time
 from datetime import datetime
@@ -17,6 +17,8 @@ from dotenv import load_dotenv
 import os
 import psutil
 import sys
+from bokeh.models.tickers import AdaptiveTicker
+from bs4 import BeautifulSoup as bs
 
 load_dotenv()
 
@@ -54,6 +56,51 @@ with open('data.json', 'r') as f: #only need to do at beginning
     
     f.close()
 
+def editBokeh():
+    html = open('bokeh.html') #open html
+    soup = bs(html, 'html.parser') #parse html
+    divtocenter = soup.find('div', {'class': 'bk-root'}) #store div tag
+    
+    divtocenter['align'] = 'center' #aligns bokeh plots to center to ensure iframe embed also in center
+    
+    with open('bokeh.html', 'wb') as f_output: #writes changes
+        f_output.write(soup.prettify('utf-8'))
+        
+    return
+
+def editOverview(total_players, how_active, record_players, favorite_mod):
+    html = open('index.html')
+    soup = bs(html, 'html.parser') #parse html
+    
+    #first add currently online players
+    total_online = soup.find('p', {'class': 'online'}) #store div tag
+    nt = soup.new_tag('ins') #use tag replace instead of append to ensure that number will fully change
+    nt.string = str(total_players)
+    total_online.ins.replace_with(nt)
+    
+    #next change activity gauge
+    activity_gauge = soup.find('strong', {'class': 'howactive'})
+    nt = soup.new_tag('ins')
+    nt.string = how_active
+    activity_gauge.ins.replace_with(nt)
+    
+    #next update record players
+    record = soup.find('p', {'class': 'record'})
+    nt = soup.new_tag('ins')
+    nt.string = str(record_players)
+    record.ins.replace_with(nt)
+    
+    #next update favorite mod
+    fm = soup.find('p', {'class': 'modpop'})
+    nt = soup.new_tag('ins')
+    nt.string = favorite_mod
+    fm.ins.replace_with(nt)
+    
+    with open('index.html', 'wb') as f_output:
+        f_output.write(soup.prettify('utf-8'))
+        
+    return
+
 def yes():
     global error_sent
     global data
@@ -88,7 +135,7 @@ def yes():
         yes()
     
     # create a new plot with a title and axis labels
-    p = figure(title="Players over Time", toolbar_location="above", plot_width=1000, plot_height=600, x_axis_label='Time', x_axis_type = 'datetime', y_axis_label='Number of players')
+    p = figure(title="Players over Time", toolbar_location="above", plot_width=900, plot_height=400, x_axis_label='Time', x_axis_type = 'datetime', y_axis_label='Number of players')
     
     # add a line renderer with legend and line thickness to the plot
     p.line(total_time, total_count, legend_label="Total Players", line_width=2, color = 'blue')
@@ -108,18 +155,20 @@ def yes():
     ))
     
     #add plot description
-    p.add_layout(Title(text="Click on legend labels to hide/show plots. Data is constantly updated.", align="left"), "right")
+    p.add_layout(Title(text="Click on legend labels to hide/show plots.", align="left"), "right")
     
     #some formatting
-    p.title.text_font_size = "25px"
+    p.title.text_font_size = "20px"
     p.title.align = "left"
-    p.title.text_color = "black"
+    p.title.text_color = "royalblue"
     p.legend.location = "top_left"
     p.legend.click_policy="hide"
     
+    p.xaxis[0].ticker = AdaptiveTicker(desired_num_ticks=12)
+    
     #second graph
-    q = figure(title="Players over Time by Mode", toolbar_location="above", plot_width=1000, plot_height=600, x_axis_label='Time', x_axis_type = 'datetime', y_axis_label='Number of players')
-    q.add_layout(Title(text="Click on legend labels to hide/show plots. Data is constantly updated.", align="left"), "right")
+    q = figure(title="Players over Time by Mode", toolbar_location="above", plot_width=900, plot_height=400, x_axis_label='Time', x_axis_type = 'datetime', y_axis_label='Number of players')
+    q.add_layout(Title(text="Click on legend labels to hide/show plots.", align="left"), "right")
     
     q.line(mode_time, team_count, legend_label="Team", line_width=2, color = 'lime')
     q.line(mode_time, survival_count, legend_label="Survival", line_width=2, color = 'tomato')
@@ -138,11 +187,13 @@ def yes():
     ))
     
     #some formatting
-    q.title.text_font_size = "25px"
+    q.title.text_font_size = "20px"
     q.title.align = "left"
-    q.title.text_color = "black"
+    q.title.text_color = "royalblue"
     q.legend.location = "top_left"
     q.legend.click_policy="hide"
+    
+    q.xaxis[0].ticker = AdaptiveTicker(desired_num_ticks=12)
     
     #set counter values
     tot = 0
@@ -221,7 +272,9 @@ def yes():
     
     # save the results
     reset_output()
-    save(column(p, q), filename = 'index.html', title = 'Starblast.io Activity Archive Project')
+    save(column(p, q), filename = 'bokeh.html', title = 'Starblast.io Activity Archive Project')
+    editBokeh() #pass to BeautifulSoup for edits
+    editOverview(tot, 'Less', max(total_count), 'Rumble') #CHANGE LESS AND FAV MOD LATER!
     print('done')
 
     if (psutil.virtual_memory().percent > 90): #to stop server crashing due to use of memory
