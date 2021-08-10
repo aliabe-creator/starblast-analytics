@@ -20,6 +20,7 @@ import psutil
 import sys
 from bokeh.models.tickers import AdaptiveTicker
 from bs4 import BeautifulSoup as bs
+import matplotlib.pyplot as plt
 
 load_dotenv()
 
@@ -55,6 +56,14 @@ with open('data.json', 'r') as f: #only need to do at beginning
     for g in data.get('mode').get('time'):
         mode_time.append(datetime.strptime(g, '%Y-%m-%d %H:%M:%S.%f'))
     
+    useries_count = data.get('mod').get('useries')
+    mcst_count = data.get('mod').get('mcst')
+    nautic_count = data.get('mod').get('nauticseries')
+    rumble_count = data.get('mod').get('rumble')
+    br_count = data.get('mod').get('battleroyale')
+    ai_count = data.get('mod').get('alienintrusion')
+    src_count = data.get('mod').get('src2')
+    
     f.close()
 
 def editBokeh():
@@ -69,7 +78,7 @@ def editBokeh():
         
     return
 
-def editOverview(total_players, how_active, record_players, favorite_mod):
+def editOverview(total_players, how_active, record_players, mod_array):
     html = open('index.html')
     soup = bs(html, 'html.parser') #parse html
     
@@ -92,9 +101,23 @@ def editOverview(total_players, how_active, record_players, favorite_mod):
     record.ins.replace_with(nt)
     
     #next update favorite mod
+    #find most popular mod
+    
+    mod_dict = {}
+    
+    mod_dict['U-Series'] = mod_array[0]
+    mod_dict['MCST'] = mod_array[1]
+    mod_dict['Nautic-Series'] = mod_array[2]
+    mod_dict['Rumble'] = mod_array[3]
+    mod_dict['Battle Royale'] = mod_array[4]
+    mod_dict['Alien Intrusion'] = mod_array[5]
+    mod_dict['SRC'] = mod_array[6]
+    
+    max_key = max(mod_dict, key=mod_dict.get) #find key with max value
+
     fm = soup.find('p', {'class': 'modpop'})
     nt = soup.new_tag('ins')
-    nt.string = favorite_mod
+    nt.string = max_key
     fm.ins.replace_with(nt)
     
     with open('index.html', 'wb') as f_output:
@@ -116,6 +139,13 @@ def yes():
     global pdm_count
     global invasion_count
     global mode_time
+    global useries_count
+    global mcst_count
+    global nautic_count
+    global rumble_count
+    global br_count
+    global ai_count
+    global src_count
     
     try:
         simstatus = requests.get('https://starblast.io/simstatus.json') #get simstatus
@@ -196,6 +226,22 @@ def yes():
     
     q.xaxis[0].ticker = AdaptiveTicker(desired_num_ticks=12)
     
+    #Create pie chart for mod popularity tracking
+    labels = ['U-Series', 'MCST', 'Nautic-Series', 'Rumble', 'Battle Royale', 'Alien Intrusion', 'SRC']
+    mod_data = [useries_count, mcst_count, nautic_count, rumble_count, br_count, ai_count, src_count]
+    
+    colors = ['#FF1744', '#D500F9', '#546E7A', '#3D5AFE', '#ADFF2F', '#00E676', '#FFC400']
+    explode = (0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05)
+    
+    plt.pie(mod_data, colors=colors, labels=labels, autopct='%1.1f%%', pctdistance=0.75, explode=explode)
+    centre_circle = plt.Circle((0, 0), 0.60, fc='white')
+    fig = plt.gcf()
+    fig.gca().add_artist(centre_circle)
+
+    #TO DEPLOY, UPDATE MAIN.PY AS WELL AS INCLUDE NEW DATA.JSON FIELDS. ALSO OVERWRITE INDEX.HTML AND CSS.
+    
+    #CHANGE HTML TO HAVE TITLES SEPARATE FROM BOKEH. SPLIT ALL GRAPHS INTO THEIR OWN IFRAME TO DO THIS. ALSO HAVE TITLE FOR DONUT PLOT.
+    
     #set counter values
     tot = 0
     amer = 0
@@ -209,7 +255,7 @@ def yes():
     for system in json_status:
         players = system.get('current_players')
         tot = tot + players
-        
+            
         #region by region sums
         if system.get('location') == 'America':
             amer = amer + players
@@ -229,7 +275,26 @@ def yes():
                 pdm = pdm + m.get('players')
             if m.get('mode') == 'invasion':
                 invasion = invasion + m.get('players')
-                
+            
+            #If the mod present in simstatus, increment global var
+            if m.get('mod_id') == 'useries':
+                useries_count = useries_count + m.get('players')
+            if m.get('mod_id') == 'mcst':
+                mcst_count = mcst_count + m.get('players')
+            if m.get('mod_id') == 'nauticseries':
+                nautic_count = nautic_count + m.get('players')
+            if m.get('mod_id') == 'rumble':
+                rumble_count = rumble_count + m.get('players')
+            if m.get('mod_id') == 'battleroyale':
+                br_count = br_count + m.get('players')
+            if m.get('mod_id') == 'alienintrusion':
+                ai_count = ai_count + m.get('players')
+            if m.get('mod_id') == 'src2':
+                src_count = src_count + m.get('players')
+                        
+    if (tot == 0 or amer == 0 or asi == 0 or eu == 0): #means that the server is being weird, so exit the program and don't add anything to data.json
+        sys.exit()   
+             
     total_time.append(datetime.now()) #updating bokeh plot
     region_time.append(datetime.now())
     mode_time.append(datetime.now())
@@ -251,6 +316,13 @@ def yes():
     data['mode']['survival'] = survival_count
     data['mode']['pdm'] = pdm_count
     data['mode']['invasion'] = invasion_count
+    data['mod']['useries'] = useries_count #overwrite mod overall counts
+    data['mod']['mcst'] = mcst_count
+    data['mod']['nauticseries'] = nautic_count
+    data['mod']['rumble'] = rumble_count
+    data['mod']['battleroyale'] = br_count
+    data['mod']['alienintrusion'] = ai_count
+    data['mod']['src2'] = src_count
     
     append_time_tot = []
     append_time_region = []
@@ -273,9 +345,10 @@ def yes():
     
     # save the results
     reset_output()
-    save(column(p, q), filename = 'bokeh.html', title = 'Starblast.io Activity Archive Project')
+    save(column(p, q), filename = 'bokeh.html', title = 'Starblast.io Activity Archive Project') #save bokeh
+    plt.savefig('images/modpie.png', bbox_inches='tight') #save mod pie matplotlib
     editBokeh() #pass to BeautifulSoup for edits
-    editOverview(tot, 'Less', max(total_count), 'Rumble') #CHANGE LESS AND FAV MOD LATER!
+    editOverview(tot, 'Less', max(total_count), mod_data)
     print('done')
 
     if (psutil.virtual_memory().percent > 90): #to stop server crashing due to use of memory
@@ -293,4 +366,3 @@ def yes():
         sys.exit() #quits the program
 
 yes()
-    
