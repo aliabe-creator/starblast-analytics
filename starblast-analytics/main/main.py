@@ -237,10 +237,8 @@ def yes():
     centre_circle = plt.Circle((0, 0), 0.60, fc='white')
     fig = plt.gcf()
     fig.gca().add_artist(centre_circle)
-
-    #TO DEPLOY, UPDATE MAIN.PY AS WELL AS INCLUDE NEW DATA.JSON FIELDS. ALSO OVERWRITE INDEX.HTML AND CSS.
     
-    #CHANGE HTML TO HAVE TITLES SEPARATE FROM BOKEH. SPLIT ALL GRAPHS INTO THEIR OWN IFRAME TO DO THIS. ALSO HAVE TITLE FOR DONUT PLOT.
+    plt.subplots_adjust(left=0.1, right=0.1, top=0.1, bottom=0.1)
     
     #set counter values
     tot = 0
@@ -346,7 +344,7 @@ def yes():
     # save the results
     reset_output()
     save(column(p, q), filename = 'bokeh.html', title = 'Starblast.io Activity Archive Project') #save bokeh
-    plt.savefig('images/modpie.png', bbox_inches='tight') #save mod pie matplotlib
+    plt.savefig('images/modpie.png') #save mod pie matplotlib
     editBokeh() #pass to BeautifulSoup for edits
     editOverview(tot, 'Less', max(total_count), mod_data)
     print('done')
