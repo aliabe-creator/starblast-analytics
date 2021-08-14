@@ -7,7 +7,7 @@ Created on Jul 29, 2021
 #if you want to run this program, you must change the paths to the files as necessary, and create your own site that embeds bokeh.html
 
 from bokeh.plotting import figure, save
-from bokeh.models import Title, HoverTool
+from bokeh.models import Title, HoverTool, DatetimeTickFormatter
 from bokeh.layouts import column, row
 import requests
 import time
@@ -21,6 +21,7 @@ import sys
 from bokeh.models.tickers import AdaptiveTicker
 from bs4 import BeautifulSoup as bs
 import matplotlib.pyplot as plt
+from math import pi
 
 load_dotenv()
 
@@ -63,6 +64,8 @@ with open('data.json', 'r') as f: #only need to do at beginning
     br_count = data.get('mod').get('battleroyale')
     ai_count = data.get('mod').get('alienintrusion')
     src_count = data.get('mod').get('src2')
+    dtm_count = data.get('mod').get('dtm')
+    sdc_count = data.get('mod').get('sdc')
     
     f.close()
 
@@ -78,7 +81,7 @@ def editBokeh():
         
     return
 
-def editOverview(total_players, how_active, record_players, mod_array):
+def editOverview(total_players, record_players, mod_array):
     html = open('index.html')
     soup = bs(html, 'html.parser') #parse html
     
@@ -87,12 +90,6 @@ def editOverview(total_players, how_active, record_players, mod_array):
     nt = soup.new_tag('ins') #use tag replace instead of append to ensure that number will fully change
     nt.string = str(total_players)
     total_online.ins.replace_with(nt)
-    
-    #next change activity gauge
-    activity_gauge = soup.find('strong', {'class': 'howactive'})
-    nt = soup.new_tag('ins')
-    nt.string = how_active
-    activity_gauge.ins.replace_with(nt)
     
     #next update record players
     record = soup.find('p', {'class': 'record'})
@@ -112,6 +109,8 @@ def editOverview(total_players, how_active, record_players, mod_array):
     mod_dict['Battle Royale'] = mod_array[4]
     mod_dict['Alien Intrusion'] = mod_array[5]
     mod_dict['SRC'] = mod_array[6]
+    mod_dict['DTM'] = mod_array[7]
+    mod_dict['SDC'] = mod_array[8]
     
     max_key = max(mod_dict, key=mod_dict.get) #find key with max value
 
@@ -146,6 +145,8 @@ def yes():
     global br_count
     global ai_count
     global src_count
+    global dtm_count
+    global sdc_count
     
     try:
         simstatus = requests.get('https://starblast.io/simstatus.json') #get simstatus
@@ -166,7 +167,7 @@ def yes():
         yes()
     
     # create a new plot with a title and axis labels
-    p = figure(title="Players over Time", toolbar_location="above", plot_width=900, plot_height=400, x_axis_label='Time', x_axis_type = 'datetime', y_axis_label='Number of players')
+    p = figure(title="Players over Time", tools="pan, zoom_in, zoom_out, box_zoom, undo, redo, reset, save", toolbar_location="above", plot_width=900, plot_height=400, x_axis_label='Time', x_axis_type = 'datetime', y_axis_label='Number of players')
     
     # add a line renderer with legend and line thickness to the plot
     p.line(total_time, total_count, legend_label="Total Players", line_width=2, color = 'blue')
@@ -197,8 +198,17 @@ def yes():
     
     p.xaxis[0].ticker = AdaptiveTicker(desired_num_ticks=12)
     
+    #Below fixes datetime stuff on x-axis
+    p.xaxis.formatter = DatetimeTickFormatter(
+        days=["%m/%d %H:%M"],
+        months=["%m/%d %H:%M"],
+        hours=["%m/%d %H:%M"],
+        minutes=["%m/%d %H:%M"]
+    )
+    p.xaxis.major_label_orientation = pi/4
+    
     #second graph
-    q = figure(title="Players over Time by Mode", toolbar_location="above", plot_width=900, plot_height=400, x_axis_label='Time', x_axis_type = 'datetime', y_axis_label='Number of players')
+    q = figure(title="Players over Time by Mode", tools="pan, zoom_in, zoom_out, box_zoom, undo, redo, reset, save", toolbar_location="above", plot_width=900, plot_height=400, x_axis_label='Time', x_axis_type = 'datetime', y_axis_label='Number of players')
     q.add_layout(Title(text="Click on legend labels to hide/show plots.", align="left"), "right")
     
     q.line(mode_time, team_count, legend_label="Team", line_width=2, color = 'lime')
@@ -226,19 +236,26 @@ def yes():
     
     q.xaxis[0].ticker = AdaptiveTicker(desired_num_ticks=12)
     
-    #Create pie chart for mod popularity tracking
-    labels = ['U-Series', 'MCST', 'Nautic-Series', 'Rumble', 'Battle Royale', 'Alien Intrusion', 'SRC']
-    mod_data = [useries_count, mcst_count, nautic_count, rumble_count, br_count, ai_count, src_count]
+    #Below fixes datetime stuff on x-axis
+    q.xaxis.formatter = DatetimeTickFormatter(
+        days=["%m/%d %H:%M"],
+        months=["%m/%d %H:%M"],
+        hours=["%m/%d %H:%M"],
+        minutes=["%m/%d %H:%M"]
+    )
+    q.xaxis.major_label_orientation = pi/4
     
-    colors = ['#FF1744', '#D500F9', '#546E7A', '#3D5AFE', '#ADFF2F', '#00E676', '#FFC400']
-    explode = (0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05)
+    #Create pie chart for mod popularity tracking
+    labels = ['U-Series', 'MCST', 'Nautic-Series', 'Rumble', 'Battle Royale', 'Alien Intrusion', 'SRC', 'DTM', 'SDC']
+    mod_data = [useries_count, mcst_count, nautic_count, rumble_count, br_count, ai_count, src_count, dtm_count, sdc_count]
+    
+    colors = ['#FF1744', '#D500F9', '#546E7A', '#3D5AFE', '#ADFF2F', '#00E676', '#FFC400', '#DF00FF', '#FF7F7F']
+    explode = (0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05)
     
     plt.pie(mod_data, colors=colors, labels=labels, autopct='%1.1f%%', pctdistance=0.75, explode=explode)
     centre_circle = plt.Circle((0, 0), 0.60, fc='white')
     fig = plt.gcf()
     fig.gca().add_artist(centre_circle)
-    
-    plt.subplots_adjust(left=0.1, right=0.1, top=0.1, bottom=0.1)
     
     #set counter values
     tot = 0
@@ -289,6 +306,10 @@ def yes():
                 ai_count = ai_count + m.get('players')
             if m.get('mod_id') == 'src2':
                 src_count = src_count + m.get('players')
+            if m.get('mod_id') == 'dtm':
+                dtm_count = dtm_count + m.get('players')
+            if m.get('mod_id') == 'sdc':
+                sdc_count = sdc_count + m.get('players')
                         
     if (tot == 0 or amer == 0 or asi == 0 or eu == 0): #means that the server is being weird, so exit the program and don't add anything to data.json
         sys.exit()   
@@ -321,6 +342,8 @@ def yes():
     data['mod']['battleroyale'] = br_count
     data['mod']['alienintrusion'] = ai_count
     data['mod']['src2'] = src_count
+    data['mod']['dtm'] = dtm_count
+    data['mod']['sdc'] = sdc_count
     
     append_time_tot = []
     append_time_region = []
@@ -344,9 +367,9 @@ def yes():
     # save the results
     reset_output()
     save(column(p, q), filename = 'bokeh.html', title = 'Starblast.io Activity Archive Project') #save bokeh
-    plt.savefig('images/modpie.png') #save mod pie matplotlib
+    plt.savefig('images/modpie.png', bbox_inches='tight') #save mod pie matplotlib
     editBokeh() #pass to BeautifulSoup for edits
-    editOverview(tot, 'Less', max(total_count), mod_data)
+    editOverview(tot, max(total_count), mod_data)
     print('done')
 
     if (psutil.virtual_memory().percent > 90): #to stop server crashing due to use of memory
