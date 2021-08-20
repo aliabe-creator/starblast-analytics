@@ -29,7 +29,6 @@ load_dotenv()
 slack_token = os.environ.get("slack_token")
 
 client = slack.WebClient(token = slack_token)
-client.chat_postMessage(channel='C027YMXQM7U', text='Analytics project has booted!')
 
 with open('data.json', 'r') as f: #only need to do at beginning
     data = json.load(f)
