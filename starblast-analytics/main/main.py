@@ -22,14 +22,14 @@ from bokeh.models.tickers import AdaptiveTicker
 from bs4 import BeautifulSoup as bs
 import matplotlib.pyplot as plt
 from math import pi
+import slack
 
 load_dotenv()
 
-signalkey = os.environ.get("signalkey") #OneSignal api key
-appid = os.environ.get("appid") #OneSignal app id
+slack_token = os.environ.get("slack_token")
 
-header = {"Content-Type": "application/json; charset=utf-8",
-          "Authorization": signalkey}
+client = slack.WebClient(token = slack_token)
+client.chat_postMessage(channel='C027YMXQM7U', text='Analytics project has booted!')
 
 with open('data.json', 'r') as f: #only need to do at beginning
     data = json.load(f)
@@ -152,16 +152,7 @@ def yes():
         simstatus = requests.get('https://starblast.io/simstatus.json') #get simstatus
         json_status = simstatus.json()
     except Exception as e:  
-        #Use OneSignal to push message to Android device
-        
-        payload = {"app_id": appid,
-           "included_segments": ["Subscribed Users"],
-           "headings": {"en": "Starblast Analytics Notifications"},
-           "contents": {"en": "Failed to fetch simstatus.json"},
-           "priority": 10, #set priority to high
-           "android_accent_color": "FFFF0000"}
-        
-        requests.post("https://onesignal.com/api/v1/notifications", headers=header, data=json.dumps(payload))
+        client.chat_postMessage(channel='C027YMXQM7U', text=e)
             
         time.sleep(60)
         yes()
@@ -373,16 +364,7 @@ def yes():
     print('done')
 
     if (psutil.virtual_memory().percent > 90): #to stop server crashing due to use of memory
-        #Use OneSignal to push message to Android device
-        
-        payload = {"app_id": appid,
-           "included_segments": ["Subscribed Users"],
-           "headings": {"en": "Starblast Analytics Notifications"},
-           "contents": {"en": "Server running out of memory."},
-           "priority": 10, #set priority to high
-           "android_accent_color": "FFFF0000"}
-        
-        requests.post("https://onesignal.com/api/v1/notifications", headers=header, data=json.dumps(payload))
+        client.chat_postMessage(channel='C027YMXQM7U', text='Server very high memory use, terminating Analytics.')
         
         sys.exit() #quits the program
 
