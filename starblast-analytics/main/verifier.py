@@ -26,7 +26,7 @@ while(True):
     byte_size = filestat.st_size
     
     if byte_size == previous_size:
-        client.chat_postMessage(channel='C027YMXQM7U', text='Analytics Verifier is now online!')
+        client.chat_postMessage(channel='C027YMXQM7U', text='Data.json has not increased in file size recently, possible error.')
         
         time.sleep(7200) #waits for 2 hours
     else:
