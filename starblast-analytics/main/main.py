@@ -65,6 +65,7 @@ with open('data.json', 'r') as f: #only need to do at beginning
     src_count = data.get('mod').get('src2')
     dtm_count = data.get('mod').get('dtm')
     sdc_count = data.get('mod').get('sdc')
+    ctf_count = data.get('mod').get('ctf')
     
     f.close()
 
@@ -110,6 +111,7 @@ def editOverview(total_players, record_players, mod_array):
     mod_dict['SRC'] = mod_array[6]
     mod_dict['DTM'] = mod_array[7]
     mod_dict['SDC'] = mod_array[8]
+    mod_dict['CTF'] = mod_array[9]
     
     max_key = max(mod_dict, key=mod_dict.get) #find key with max value
 
@@ -146,6 +148,7 @@ def yes():
     global src_count
     global dtm_count
     global sdc_count
+    global ctf_count
     
     try:
         simstatus = requests.get('https://starblast.io/simstatus.json') #get simstatus
@@ -236,11 +239,11 @@ def yes():
     q.xaxis.major_label_orientation = pi/4
     
     #Create pie chart for mod popularity tracking
-    labels = ['U-Series', 'MCST', 'Nautic-Series', 'Rumble', 'Battle Royale', 'Alien Intrusion', 'SRC', 'DTM', 'SDC']
-    mod_data = [useries_count, mcst_count, nautic_count, rumble_count, br_count, ai_count, src_count, dtm_count, sdc_count]
+    labels = ['U-Series', 'MCST', 'Nautic-Series', 'Rumble', 'Battle Royale', 'Alien Intrusion', 'SRC', 'DTM', 'SDC', 'CTF']
+    mod_data = [useries_count, mcst_count, nautic_count, rumble_count, br_count, ai_count, src_count, dtm_count, sdc_count, ctf_count]
     
-    colors = ['#FF1744', '#D500F9', '#546E7A', '#3D5AFE', '#ADFF2F', '#00E676', '#FFC400', '#DF00FF', '#FF7F7F']
-    explode = (0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05)
+    colors = ['#FF1744', '#D500F9', '#546E7A', '#3D5AFE', '#ADFF2F', '#00E676', '#FFC400', '#DF00FF', '#FF7F7F', '#42F5DD']
+    explode = (0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05)
     
     plt.pie(mod_data, colors=colors, labels=labels, autopct='%1.1f%%', pctdistance=0.75, explode=explode)
     centre_circle = plt.Circle((0, 0), 0.60, fc='white')
@@ -300,6 +303,8 @@ def yes():
                 dtm_count = dtm_count + m.get('players')
             if m.get('mod_id') == 'sdc':
                 sdc_count = sdc_count + m.get('players')
+            if m.get('mod_id') == 'ctf':
+                ctf_count = ctf_count + m.get('players')
                         
     if (tot == 0 or amer == 0 or asi == 0 or eu == 0): #means that the server is being weird, so exit the program and don't add anything to data.json
         sys.exit()   
@@ -334,6 +339,7 @@ def yes():
     data['mod']['src2'] = src_count
     data['mod']['dtm'] = dtm_count
     data['mod']['sdc'] = sdc_count
+    data['mod']['ctf'] = ctf_count
     
     append_time_tot = []
     append_time_region = []
