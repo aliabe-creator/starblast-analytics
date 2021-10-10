@@ -4,3 +4,4 @@ On August 4, 2021, the method for notifying admin (me) when errors were occurrin
 On August 5th, 2021, the existing Bokeh graphs were embedded in a Dreamweaver-designed site, still hosted at the same url.
 Soon after, a new pie chart created using matplotlib was also embedded, tracking mod popularity.
 On August 20, 2021, the notification system was changed to Slack for more consistent results.
+On October 10, 2021, added special projects folder. First special project: tracking MCST playercount over time.
